@@ -1,0 +1,210 @@
+using System;
+//using System.Collections;
+using System.Collections.Generic;
+using System.Collections;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using static labb3.Program;
+
+namespace labb3
+{
+    public class Node<T>
+    {
+        public Node(T item)
+        {
+            Data = item;
+        }
+        public T Data { get; set; }
+        public Node<T> Next { get; set; }
+    }
+
+    public class Stackk<T>: IEnumerable<T>
+    {
+        Node<T> head;
+        private int count;  // количество элементов
+
+        public bool IsEmpty()
+        {
+            return count == 0;
+        }
+        // размер стека
+        public int Count()
+        {
+            return count;
+        }
+        // добвление элемента
+        public void Push(T item)
+        {
+            Node<T> node = new Node<T>(item);
+            node.Next = head;
+            head = node;
+            count++;
+        }
+        // извлечение элемента
+        public T Pop()
+        {
+            if (IsEmpty())
+            {
+                throw new Exception("Стек пуст");
+            }
+            else
+            {
+                Node<T> node = head;
+                head = head.Next;
+                count--;
+                return node.Data;
+            }
+        }
+        
+        public void Clear()
+        {
+            for(int i = 0; i < count; i++)
+            {
+                Pop();
+            }
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)this).GetEnumerator();
+        }
+
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            Node<T> current = head;
+            while (current != null)
+            {
+                yield return current.Data;
+                current = current.Next;
+            }
+        }
+
+    }
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("IntTest: ");
+            IntTest();
+            Console.WriteLine();
+
+            Console.WriteLine("StringTest: ");
+            StringTest();
+            Console.WriteLine();
+
+            Console.WriteLine("PeopleTest: ");
+            PeopleTest();
+            Console.WriteLine();
+
+            Console.WriteLine("SortTest: ");
+            SortTest();
+
+            Console.ReadLine();
+        }
+
+        static void IntTest()
+        {
+            int N = 1000;
+            const int MAX = 1000;
+            const int MIN = -1000;
+            Stackk<int> stack = new Stackk<int>();
+            Random random = new Random();
+            for (int i = 0; i < N; i++)
+            {
+                stack.Push(random.Next(MIN, MAX));
+            }
+
+            Console.WriteLine($"sum = {stack.Sum()}/t average = {stack.Average()}/t max = {stack.Max()}/t min = {stack.Min()}");
+            stack.Clear();
+        }
+
+        static void StringTest()
+        {
+            string[] words = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten" };
+            Stack<string> stack = new Stack<string>();
+            
+            foreach (string word in words)
+                stack.Push(word);
+            Console.WriteLine(stack.Pop());
+            Console.WriteLine(stack.Count());
+            stack.Clear();
+        }
+
+        static void PeopleTest()
+        {
+            int N = 100;
+            string[] name = { "Виталий", "Костя", "Надежда", "Никита", "Мухамед", "Коля", "Кирилл" };
+            string[] surname = { "Говорун", "Мамаев", "Петров", "Абу", "Конфеткин", "Дени", "Жиров", "Толстой", "Абрамян", "Кулькин", "Простафьев" };
+            string[] patronymic = { "Витаоий", "Костя", "Надежда", "Никита", "Мухамед", "Коля", "Кирилл" };
+            int[] year = new int[40];
+            for (int i = 0; i < 40; i++)
+            {
+                year[i] = i + 1980;
+            }
+            Stackk<Person> stackk = new Stackk<Person>();
+            for (int i = 0; i < N; i++)
+            {
+                Random rand = new Random();
+                int rn = rand.Next(name.Length);
+                int rs = rand.Next(surname.Length);
+                int rp = rand.Next(patronymic.Length);
+                int ry = rand.Next(year.Length);
+                Person person = new Person(name[rn], surname[rs], patronymic[rp], year[ry]);
+                stackk.Push(person);
+            }
+            Stackk<Person> younger20 = new Stackk<Person>();
+            Stackk<Person> older30 = new Stackk<Person>();
+            foreach (Person person in stackk)
+            {
+                if (Math.Abs(person.year - 2022) < 20)
+                    younger20.Push(person);
+                else if (Math.Abs(person.year - 2022) > 30)
+                    older30.Push(person);
+            }
+            int count = 0;
+            foreach (Person person in younger20)
+            {
+                if(Math.Abs(person.year - 2022) > 20)
+                    count++;
+                else if (Math.Abs(person.year - 2022) < 30)
+                    count++;
+            }
+            Console.WriteLine($"Количество неверных подсчетов: {count}");
+            stackk.Clear();
+        }
+
+        static void SortTest()
+        {
+            int N = 1000;
+            const int MAX = 1000;
+            const int MIN = -1000;
+            Stackk<int> stack = new Stackk<int>();
+            Stack<int> check_stack = new Stack<int>();
+            Random random = new Random();
+            for (int i = 0; i < N; i++)
+            {
+                int item = random.Next(MIN, MAX);
+                stack.Push(item);
+                check_stack.Push(item);
+
+            }
+            foreach (var items in stack.OrderBy(x => x))
+                Console.WriteLine(items);
+            foreach (var items in check_stack.OrderBy(x => x))
+                Console.WriteLine(items);
+            stack.Clear();
+        }
+    }
+    public class Person
+    {
+        public string name;
+        public string surname;
+        public string patronymic;
+        public int year;
+        public Person(string name, string surname, string patronymic, int year)
+        {
+            this.name = name; this.surname = surname; this.patronymic = patronymic; this.year = year; 
+        }
+    }
+    
+}

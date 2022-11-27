@@ -1,0 +1,248 @@
+using System.Diagnostics;
+
+Main();
+
+static void Main()
+{
+    int 
+
+        inEdge = 0,
+        outEdge = 0;
+    int[] minArrVertex = new int[] { 50, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000 };
+    int[] maxArrVertex = new int[] { 100, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000 };
+
+    File.WriteAllText("Out.txt", string.Empty);
+
+    for (int i = 0; i < minArrVertex.Length; i++)
+    {
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.Start();
+        List<double> array_time = new List<double>();
+        TimeSpan time = new TimeSpan();
+        string text = "";
+
+        Random rand = new Random();
+        int vertex = rand.Next(minArrVertex[i], maxArrVertex[i]);
+
+        Graph graph = new Graph(Generate(vertex));
+
+        if (rand.Next(2) == 0)
+        {
+            text = "Поиск в ширину";
+            BFS(graph.getGraph());
+        }
+        else
+        {
+            text = "Поиск в глубину";
+            DFS(graph.getGraph());
+        }
+
+        stopwatch.Stop();
+        array_time.Add(stopwatch.Elapsed.TotalMilliseconds);
+        time = TimeSpan.FromMilliseconds(array_time.Last());
+        Output(time, i, text, vertex);
+        
+        graph.incidenceGraph();
+        Point(graph, vertex, inEdge, outEdge);
+    }
+
+    static void Point(Graph graph, int vertex, int inEdge, int outEdge )
+    {
+        graph.AdjacencyList(vertex);
+
+        Console.WriteLine();
+        for (int i = 0; i < vertex; i++)
+        {
+            int maxAvgInEdges = 0;
+            int maxAvgOutEdges = 0;
+            int maxEdgeToVertex = 0;
+            for (int j = 0; j < vertex; j++)
+            {
+                maxEdgeToVertex += graph.getGraph()[i, j];
+                if (i > j) { maxAvgInEdges += graph.getGraph()[j, i]; }
+                if (i < j) { maxAvgOutEdges += graph.getGraph()[j, i]; }
+            }
+            Console.WriteLine($"Кол-во ребер связанных с  вершиной {i}: {maxEdgeToVertex}");
+            if (inEdge < maxAvgInEdges) { inEdge = maxAvgInEdges; }
+            if (outEdge < maxAvgOutEdges) { outEdge = maxAvgOutEdges; }
+        }
+
+        Console.WriteLine($"\nМаксимальное количество входящиx и выходящих ребер: {inEdge}, {outEdge}");
+
+    }
+}
+   
+
+static int[,] Generate(int vertex)
+{
+    Random rand = new Random();
+    int vertex_count = vertex;
+
+    List<int> vert_list = new List<int>();
+    vert_list.Add(0);
+    var numbers = Enumerable.Range(1, vertex).ToList();
+    var numbersCopy = new List<int>(numbers);
+    int[,] matrix = new int[vertex, vertex];
+
+    for (int i = 0; i < vertex; i++)
+    {
+        //Количество ребер
+        int edge = rand.Next(1, vertex_count);
+        for (int j = 0; j < edge; j++)
+        {
+            if (numbersCopy.Count == 0) { break; }
+
+            var pickIndex = rand.Next(numbersCopy.Count);
+            var randNumber = numbersCopy[pickIndex] - 1;
+
+            if (i == randNumber)
+            {
+                matrix[i, randNumber] = 0;
+                matrix[randNumber, i] = 0; 
+            }
+            else
+            {
+                matrix[i, randNumber] = 1;
+                matrix[randNumber, i] = 1;
+            }
+            numbersCopy.RemoveAt(pickIndex);
+        }
+    }
+    return matrix;
+}
+
+static void BFS(int[,] graph)
+{
+    
+    Random rand = new Random();
+    Queue<int> q = new Queue<int>(); 
+    
+    int vertexAmount = graph.GetLength(0) - 1;
+    Console.WriteLine(vertexAmount);
+    bool[] used = new bool[vertexAmount + 1];
+    used[vertexAmount] = true; 
+
+    q.Enqueue(vertexAmount);
+    while (q.Count != 0)
+    {
+        vertexAmount = q.Peek();
+        q.Dequeue();
+
+        for (int i = 0; i < vertexAmount; i++)
+        {
+            if (Convert.ToBoolean(graph[vertexAmount, i]))
+            {
+                if (!used[i])
+                {
+                    used[i] = true;
+                    q.Enqueue(i);
+                }
+            }
+        }
+    }
+}
+
+static void DFS(int[,] graph)
+{
+    int vertexAmount = graph.GetLength(0) - 1;
+    Stack<int> stack = new Stack<int>();
+    bool[] used = new bool[vertexAmount + 1];
+    used[vertexAmount] = true;
+
+    stack.Push(vertexAmount);
+    
+    while (stack.Count != 0)
+    {
+        vertexAmount = stack.Peek();
+        stack.Pop();
+
+        for (int i = 0; i < vertexAmount; i++)
+        {
+            if (Convert.ToBoolean(graph[vertexAmount, i]))
+            {
+                if (!used[i])
+                {
+                    used[i] = true;
+                    stack.Push(i);
+                }
+            }
+        }
+    }
+}
+
+static void Output(TimeSpan time, int N, string txt, int amount)
+{
+    string text = "";
+    text += $"{txt} по графу {N+1}:\n Кол-во вершин: {amount}. Затраченное время = {time}.\n";
+
+    using (FileStream filestream = new FileStream("Out.txt", FileMode.Append))
+    {
+        byte[] array = System.Text.Encoding.Default.GetBytes(text);
+        filestream.Write(array, 0, array.Length);
+    }
+}
+
+public class Graph
+{
+    private int[,] graph;
+
+    public Graph(int[,] graph)
+    {
+        this.graph = graph;
+    }
+
+    public int[,] getGraph()
+    {
+        return graph;
+    }
+
+
+    public int[,] incidenceGraph()
+    {
+        List<int> edge_v1 = new List<int>();
+        List<int> edge_v2 = new List<int>();
+        for (int i = 0; i < graph.GetLength(0); i++)
+            for (int j = 0; j < graph.GetLength(1); j++)
+            {
+                if (graph[i, j] == 1)
+                {
+                    edge_v1.Add(i);
+                    edge_v2.Add(j);
+                }
+            }
+
+        int[,] incidenceMatrix = new int[graph.GetLength(0), graph.GetLength(1) - 1];
+
+        for (int i = 0; i < graph.GetLength(0); i++)
+        {
+            for (int j = 0; j < graph.GetLength(1) - 1; j++)
+            {
+                incidenceMatrix[i, j] = 0;
+            }
+        }
+            
+        for (int i = 0;i < graph.GetLength(0) - 1; i++)
+        {
+            incidenceMatrix[edge_v1[i], i] = 1;
+            incidenceMatrix[edge_v2[i], i] = 1;
+        }
+            
+        return incidenceMatrix;
+    }
+
+    public List<List<int>> AdjacencyList(int vertex)
+    {
+        List <List<int>> AdjList = new List<List<int>>();
+
+        for (int i = 0; i < vertex; i++)
+        {
+            AdjList.Add(new List<int>());
+            for (int j = 0; j < vertex; j++)
+            {
+                AdjList[i].Add(graph[i,j]);
+            }
+        }
+
+        return AdjList;
+    }
+}
